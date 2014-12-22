@@ -1,0 +1,13 @@
+{
+    "name": "bin",
+    "description": "Python implementation of gnu utilities",
+    "url": "github:///minersoft/bin",
+    "version": "1.0.0",
+    "build": 2,
+    "last_modified": "2014-12-22 23:30:00",
+    "dependencies": [],
+    "external_modules": [],
+    "external_resources": [],    
+    "changelog": [
+    ]
+}
