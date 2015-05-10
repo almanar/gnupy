@@ -6,8 +6,15 @@ import sys
 import urllib2
 
 postData = None
+postMultiPartData = None
+multipartDataSeparator = "HGFWESRFW34768798798"
+
 def dataOptCallback(option, opt, value, parser):
+    global postMultiPartData
     global postData
+    if postMultiPartData:
+        print >>sys.stderr, "Can't mix -d and -F options"
+        sys.exit(1)
     if len(value) > 0 and value[0] == '@':
         try:
             f = open(value[1:], "rb")
@@ -24,10 +31,44 @@ def dataOptCallback(option, opt, value, parser):
     else:
         postData += "&" + value
 
+def multipartDataOptCallback(option, opt, aValue, parser):
+    global postMultiPartData
+    global postData
+    if postData:
+        print >>sys.stderr, "Can't mix -d and -F options"
+        sys.exit(1)
+    nameValue = aValue.split("=", 1)
+    if len(nameValue) != 2:
+        print >>sys.stderr, "Argument to -F should be of form name=value but is", aValue
+        sys.exit(1)
+    name = nameValue[0]
+    value = nameValue[1]
+    if len(value) > 0 and value[0] == '@':
+        try:
+            f = open(value[1:], "rb")
+            value = f.read()
+            f.close()
+            if opt != "--data-binary":
+                value = value.replace("\r", "")
+                value = value.replace("\n", "")
+        except Exception as e:
+            print >> sys.stderr, "Failed to open file to read POST data: %s" % str(e)
+            sys.exit(1)
+    append = "--" + multipartDataSeparator  + "\r\n"
+    append += 'Content-Disposition: form-data; name="%s"\r\n\r\n' % name
+    if postMultiPartData is None:
+        postMultiPartData = append
+    else:
+        postMultiPartData += "\r\n" + append
+    postMultiPartData += value 
+    
+    
 def createRequest(url, options):
     request = urllib2.Request(url)
     if options.method:
         request.get_method = lambda: options.method
+    if postMultiPartData:
+        request.add_header("Content-Type", "multipart/form-data; boundary=%s"%multipartDataSeparator)
     return request
 
 usage = "Usage: curl [<options>] <url>"
@@ -53,6 +94,10 @@ def parseOptions():
                       help="Sends specified string (or @file content) as POST request (no processing is done)",
                       type="string", nargs=1,
                       callback=dataOptCallback)
+    parser.add_option("-F", "--form", action="callback", dest="form_data",
+                      help="Emulates sending form using multipart/form-data",
+                      type="string", nargs=1,
+                      callback=multipartDataOptCallback)
 
     (options, urls) = parser.parse_args()
     return (options, urls)
@@ -93,7 +138,10 @@ headers = options.headers if options.headers else []
 
 for url in urls:
     req = createRequest(url, options)
-    if postData is not None:
+    if postMultiPartData is not None:
+        postMultiPartData += "--" + multipartDataSeparator + "--\r\n"
+        req.add_data(postMultiPartData)
+    elif postData is not None:
         req.add_data(postData)
     for header in headers:
         try:
