@@ -4,7 +4,7 @@
 import optparse
 import sys
 import hashlib
-from bin_utils import reopenFileInBinMode, expandFiles
+from bin_utils import reopenFileInBinMode, expandFiles, readlineGenerator
 
 
 usage = "Usage: %prog [<options>] <file>..."
@@ -35,21 +35,14 @@ files = expandFiles(files)
 if not files:
     if options.binary:
         reopenFileInBinMode(sys.stdin)
-    md5sum(sys.stdin, "stdin")
-    sys.exit()
-
-def openFile(options):
-    if options.file:
-        try:
-            out = open(options.file, "wb")
-        except Exception as e:
-            print >>sys.stderr, "Failed to open %s for writing" % options.file
-            print str(e)
-            sys.exit(1)
+    md5Obj = hashlib.md5()
+    if sys.stdin.isatty():
+        for line in readlineGenerator(sys.stdin):
+            md5Obj.update(line)
+        print md5Obj.digest().encode("hex") + "\t" + "stdin"
     else:
-        out = sys.stdout
-    return out
-
+        md5sum(sys.stdin, "stdin")
+    sys.exit()
 
 openMode = "rb" if options.binary else "r"
 

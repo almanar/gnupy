@@ -6,10 +6,9 @@ from bin_utils import *
 
 usage = "Usage: cat  <file>..."
 
+exitOnInterrupt()
 
-if len(sys.argv) <= 1:
-    files = ["-"]
-elif sys.argv[1] in ["-h", "--help"]:
+if len(sys.argv)>1 and sys.argv[1] in ["-h", "--help"]:
     print usage
     sys.exit()
 else:
@@ -33,3 +32,10 @@ for fileName in expandFiles(files):
     copyStream(fileObj, sys.stdout)
     if fileObj != sys.stdin:
         fileObj.close()
+
+if not files:
+    #if both stdin and stdout aren't terminal then work in binary mode
+    if not sys.stdin.isatty() and not sys.stdout.isatty():
+        reopenFileInBinMode(sys.stdin)
+        reopenFileInBinMode(sys.stdout)
+    copyStream(sys.stdin, sys.stdout)

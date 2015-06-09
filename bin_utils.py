@@ -4,6 +4,7 @@
 
 import sys
 import os
+from argparse import Action as argparseAction
 
 _isWin32 = (sys.platform == "win32")
 
@@ -13,10 +14,23 @@ def isWin():
 def reopenFileInBinMode(fileobj):
     if sys.platform == "win32":
         import msvcrt
-        msvcrt.setmode(fileobj.fileno(), os.O_BINARY)
+        msvcrt.setmode(fileobj.fileno(), os.O_BINARY )
 
+def copyTermInStream(inStream, outStream):
+    while True:
+        line = inStream.readline()
+        # exit on Ctrl-D
+        if line[0] == '\004':
+            break
+        outStream.write(line)
+        #if doFlush:
+        #    outStream.flush()
+            
 def copyStream(inStream, outStream, bufSize = 128*1024):
     if inStream == sys.stdin or outStream==sys.stdout:
+        if inStream == sys.stdin and hasattr(inStream, "isatty") and inStream.isatty():
+            copyTermInStream(inStream, outStream)
+            return
         bufSize = 16*1024
     try:
         while True:
@@ -27,12 +41,19 @@ def copyStream(inStream, outStream, bufSize = 128*1024):
     except KeyboardInterrupt:
         pass
 
+def normFile(file):
+    if _isWin32:
+        return os.path.expanduser(file.replace("/","\\"))
+    else:
+        return os.path.expanduser(file)
+
 def expandFiles(files):
     """Performs wildcard expansion only on windows since on other platforms it is done automatically by shell"""
     if sys.platform == "win32":
         import glob
         expandedFiles = []
         for file in files:
+            file = normFile(file)
             expandedFiles.extend(glob.glob(file))
         return expandedFiles
     else:
@@ -91,3 +112,45 @@ def getTreeFiles(baseDir, includePattern=None, excludePattern=None):
         excludeRegexp = None
     os.path.walk(baseDir, walkFunc, (files, includeRegexp, excludeRegexp))
     return files
+
+def replace(src, dst):
+    """replace(src, dst): Replaces <dst> with <src>
+    Works like rename but deletes <dst> before if necessary
+    """
+    if _isWin32 and os.path.exists(dst):
+        os.remove(dst)
+    os.rename(src, dst)
+
+class ExtendAction(argparseAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        prev = None
+        if hasattr(namespace, self.dest):
+            prev = getattr(namespace, self.dest)
+        if prev is None:
+            prev = []
+            setattr(namespace, self.dest, prev)
+        if values:
+            prev.extend(values)
+
+def exitOnInterrupt():
+    import signal
+    def handler(signum, frame):
+        print >>sys.stderr, "Signal %d occurred" % signum
+        sys.exit(2)
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+    
+
+def readlineGenerator(streamIn):
+    def generator():
+        while True:
+            line = streamIn.readline()
+            # exit on Ctrl-D
+            if line[0] == '\004':
+                break
+            yield line
+    if hasattr(streamIn, "isatty") and streamIn.isatty():
+        return generator()
+    else:
+        return streamIn
+    

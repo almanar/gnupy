@@ -55,7 +55,9 @@ def compress(options, files):
         reopenFileInBinMode(sys.stdout)
         inStream = sys.stdin
         try:
-            gzipStream = gzip.open(fileobj=sys.stdout, mode="w", compresslevel=options.compresslevel)
+            gzipStream = gzip.GzipFile("stdout", mode="w", compresslevel=options.compresslevel, fileobj=sys.stdout)
+            if not options.ascii:
+                reopenFileInBinMode(sys.stdin)
             copyStream(inStream, gzipStream)
             gzipStream.close()
         except Exception as e:
@@ -77,7 +79,7 @@ def compress(options, files):
                     continue
             try:
                 statData = os.stat(fileName)
-                gzipStream = gzip.open(outFileName, mode="wb", compresslevel=options.compresslevel, mtime=statData.st_mtime)
+                gzipStream = gzip.GzipFile(outFileName, mode="wb", compresslevel=options.compresslevel, mtime=statData.st_mtime)
             except Exception as e:
                 print >>sys.stderr, str(e)
                 ec = 1
@@ -105,7 +107,7 @@ def decompress(options, files):
     if not files:
         reopenFileInBinMode(sys.stdin)
         try:
-            gzipStream = gzip.open(fileobj=sys.stdin, mode="rb", compresslevel=options.compresslevel)
+            gzipStream = gzip.GzipFile("stdin", mode="rb", compresslevel=options.compresslevel, fileobj=sys.stdin)
         except Exception as e:
             print >>sys.stderr, str(e)
             return 1
@@ -125,7 +127,7 @@ def decompress(options, files):
                     reopenFileInBinMode(sys.stdout)
                 outStream = sys.stdout
                 try:
-                    gzipStream = gzip.open(fileName, mode="rb", compresslevel=options.compresslevel)
+                    gzipStream = gzip.GzipFile(fileName, mode="rb", compresslevel=options.compresslevel)
                     copyStream(gzipStream, outStream)
                     gzipStream.close()
                 except Exception as e:

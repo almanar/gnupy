@@ -15,3 +15,8 @@ and then press on _Environment Variables_.
 * cat
 * curl
 * md5sum
+* dos2unix, unix2dos
+
+All utilities supports files in dos naming format (with backslash '\' directory separator)
+You can specify glob pattern in input that includes followin special characters: *, ? []
+To terminate standard input press Ctrl-D and then Enter

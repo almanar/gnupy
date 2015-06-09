@@ -134,14 +134,14 @@ for fileName in files:
             sys.exit(3)
     lineno = 0
     if invert:
-        for line in fileObj:
+        for line in readlineGenerator(fileObj):
             match = regexp.search(line)
             lineno += 1
             if not match:
                 count_matches += 1
                 dumpFunc(fileName, lineno, line)
     else:
-        for line in fileObj:
+        for line in readlineGenerator(fileObj):
             match = regexp.search(line)
             lineno += 1
             if match:
