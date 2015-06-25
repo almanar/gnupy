@@ -4,7 +4,7 @@
 import sys
 from bin_utils import *
 
-usage = "Usage: cat  <file>..."
+usage = "Usage: cat  <file>...\n  Dumps files to standard output"
 
 exitOnInterrupt()
 
@@ -12,7 +12,7 @@ if len(sys.argv)>1 and sys.argv[1] in ["-h", "--help"]:
     print usage
     sys.exit()
 else:
-    files = sys.argv[1:]
+    files = expandFiles(sys.argv[1:])
 
 reopenFileInBinMode(sys.stdout)
 

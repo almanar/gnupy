@@ -96,12 +96,14 @@ def printItem(d, f, st=None):
         return
     if not options.long:
         print f[0]
+        return
     fullPath = pjoin(d,f[0])
     if not st:
         try:
             st = os.stat(fullPath)
         except Exception as e:
-            print >>sys.stderr, "stat %s: %s" % (fullPath, str(e))
+            print >>sys.stderr, str(e)
+            return
     attr = getAttr(fullPath, st)
     item = "%s  %10d  %s  %s" % (attr, st.st_size, time.ctime(options.timeFunc(st)), f[0])
     if options.classify:
@@ -143,7 +145,10 @@ if files:
         if os.path.isdir(f) and not options.list_dir:
             printDir(f, printName=f if len(files)>1 else None)
         else:
-            printItem("", (f, None))
+            if not os.path.exists(f):
+                print "File or directory '%s' doesn't exist" % f
+            else:
+                printItem("", (f, None))
 else:
     printDir(".")
         

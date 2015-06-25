@@ -55,7 +55,10 @@ def expandFiles(files):
         for file in files:
             file = normFile(file)
             expandedFiles.extend(glob.glob(file))
-        return expandedFiles
+        if not expandedFiles:
+            return files
+        else:
+            return expandedFiles
     else:
         return files
 
