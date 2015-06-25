@@ -15,7 +15,8 @@ def sizeKey(fileEntry):
     return fileEntry[1].st_size
 def timeKey(fileEntry):
     global options
-    return options.timeFunc(fileEntry[1])
+    # by default sort order is time decreasing thus minus
+    return -options.timeFunc(fileEntry[1])
 def extKey(fileEntry):
     root,ext = os.path.splitext(fileEntry[0].lower())
     return (ext, root)
