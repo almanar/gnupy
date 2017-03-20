@@ -1,4 +1,5 @@
 @echo off
 
-python %~dp0\grep_main.py %*
+python %~dp0\wc_main.py %*
+
 exit /B %ERRORLEVEL%

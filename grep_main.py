@@ -36,6 +36,8 @@ def parseOptions():
                       help="Recurse in directories only searching file matching PATTERN.")
     parser.add_option("--exclude", dest="exclude_pattern",
                       help="Recurse in directories skip file matching PATTERN.")
+    parser.add_option("-A", "--after-context", dest="after_context", metavar="num", type="int", default=0,
+                      help="Print NUM lines of trailing context after matching lines. Places a line containing a group separator (--) between contiguous groups of matches.")
 
     (options, args) = parser.parse_args()
     return (options, args)
@@ -121,8 +123,9 @@ else:
             dumpFunc = dump_filename_lineno_text
         else:
             dumpFunc = dump_filename_text
-    
+
 for fileName in files:
+    linesToPrint = -1
     if fileName == "/dev/stdin":
         fileObj = sys.stdin
         reopenFileInBinMode(sys.stdin)
@@ -139,14 +142,25 @@ for fileName in files:
             lineno += 1
             if not match:
                 count_matches += 1
+                if linesToPrint >= 0 and (options.after_context>0):
+                    print "--"
+                linesToPrint = options.after_context + 1
+            if linesToPrint > 0:
                 dumpFunc(fileName, lineno, line)
+            linesToPrint -= 1
     else:
         for line in readlineGenerator(fileObj):
             match = regexp.search(line)
             lineno += 1
             if match:
                 count_matches += 1
+                if linesToPrint >= 0 and (options.after_context>0):
+                    print "--"
+                linesToPrint = options.after_context + 1
+            #print "linesToPrint", linesToPrint
+            if linesToPrint > 0:
                 dumpFunc(fileName, lineno, line)
+            linesToPrint -= 1
     if fileObj != sys.stdin:
         fileObj.close()
 
