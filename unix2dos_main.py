@@ -56,7 +56,7 @@ if options.newFiles:
 
 # convert new files
 if options.files:
-    for fromFileName in options.files:
+    for fromFileName in expandFiles(options.files):
         toFileName = fromFileName + tempSuffix
         try:
             with open(fromFileName, readFlag) as fromFile, open(toFileName, writeFlag) as toFile:
